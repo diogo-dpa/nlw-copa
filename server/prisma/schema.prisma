@@ -1,5 +1,4 @@
-// This is your Prisma schema file,
-// learn more about it in the docs: https://pris.ly/d/prisma-schema
+// para rodar o comando de seed: npx prisma db seed
 
 generator client {
   provider = "prisma-client-js"
@@ -20,4 +19,52 @@ model Pool {
   title     String
   code      String   @unique
   createdAt DateTime @default(now())
+  ownerId   String? // Nulo. Quando o bolão é criado na web
+
+  participants Participant[]
+  owner        User?         @relation(fields: [ownerId], references: [id])
+}
+
+// Tabela Pivô
+model Participant {
+  id     String @id @default(cuid())
+  userId String
+  poolId String
+
+  user    User?   @relation(fields: [userId], references: [id])
+  guesses Guess[]
+  pool    Pool    @relation(fields: [poolId], references: [id])
+
+  @@unique([userId, poolId]) // índice único com user e pool, pois não vai se repetir (o mesmo usuário só pode participar de um bolão)
+}
+
+model User {
+  id        String   @id @default(cuid())
+  name      String
+  email     String   @unique
+  avatarUrl String?
+  createdAt DateTime @default(now())
+
+  participatingAt Participant[] // participando em 
+  ownPools        Pool[] // boloões que o usuário é dono
+}
+
+model Game {
+  id                    String   @id @default(cuid())
+  date                  DateTime
+  firstTeamCountryCode  String
+  secondTeamCountryCode String
+  guesses               Guess[] // Não vai criar uma coluna
+}
+
+model Guess {
+  id               String   @id @default(cuid())
+  firstTeamPoints  Int
+  secondTeamPoints Int
+  createdAt        DateTime @default(now())
+  gameId           String
+  participantId    String
+
+  game        Game        @relation(fields: [gameId], references: [id]) // Não vai criar uma coluna
+  participant Participant @relation(fields: [participantId], references: [id])
 }
